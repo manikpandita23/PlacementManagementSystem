@@ -10,7 +10,6 @@ app.secret_key = 'my secret key'
 # Configure MySQL database
 db_config = {
     'host': 'localhost',
-    'port': 8889,
     'user': 'root',
     'password': 'root',
     'database': 'placement_management_system'
