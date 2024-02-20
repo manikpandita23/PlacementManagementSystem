@@ -3,7 +3,6 @@ import mysql.connector
 # Define database configuration
 db_config = {
     'host': 'localhost',
-    'port': 8889,
     'user': 'root',
     'password': 'root',
     'database': 'placement_management_system'
