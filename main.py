@@ -104,29 +104,10 @@ def login():
 #     else:
 #         return render_template('login.html')
 
-@app.route('/')
-def index():
-    if 'username' in session:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        # Example SQL query to fetch user, student, and GPA information
-        cursor.execute("""
-            SELECT u.Username, u.UserType, s.USN, s.FirstName, s.LastName, s.Department, s.GraduationYear, g.AcademicYear, g.Semester, g.CumulativeGPA
-            FROM user u
-            LEFT JOIN student s ON u.Username = s.USN
-            LEFT JOIN gpa g ON u.Username = g.USN
-            WHERE u.Username = %s
-        """, (session['username'],))
-        user_info = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return render_template('user_details.html', user_info=user_info)
-    else:
-        return render_template('login.html')
-    
 @app.route('/admin_dashboard')
 def admin_dashboard():
     if 'username' in session and session['user_type'] == 'admin':
+        # Fetch and display admin dashboard data here
         conn = get_db_connection()
         cursor = conn.cursor()
         # Example SQL query to fetch all user, student, and GPA information
@@ -140,10 +121,15 @@ def admin_dashboard():
         cursor.close()
         conn.close()
         return render_template('admin_dashboard.html', all_user_info=all_user_info)
+    elif 'username' in session and session['user_type'] == 'user':
+        # Fetch and display user dashboard data here
+        return redirect(url_for('user_dashboard'))
     else:
-        flash('You do not have permission to access this page.')
-        return redirect(url_for('index'))
-    
+        # If no user is logged in, redirect to the login page
+        return redirect(url_for('login'))
+
+    flash('You do not have permission to access this page.')
+    return redirect(url_for('index'))
 @app.route('/add_user', methods=['POST'])
 def add_user():
     if 'username' in session and session['user_type'] == 'admin':
