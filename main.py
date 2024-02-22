@@ -86,6 +86,84 @@ def login():
     #         return "Invalid login"
     # return render_template('login.html')
 
+# @app.route('/')
+# def index():
+#     if 'username' in session:
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         cursor.execute("SELECT * FROM user WHERE Username = %s", (session['username'],))
+#         user = cursor.fetchone()
+#         cursor.close()
+#         conn.close()
+#         if user and user[2] == 'admin':
+#             # For admins, render a template that allows full access
+#             return render_template('admin_dashboard.html', user=user)
+#         elif user:
+#             # For regular users, render a template that allows read-only access
+#             return render_template('user_details.html', user=user)
+#     else:
+#         return render_template('login.html')
+
+@app.route('/')
+def index():
+    if 'username' in session:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Example SQL query to fetch user, student, and GPA information
+        cursor.execute("""
+            SELECT u.Username, u.UserType, s.USN, s.FirstName, s.LastName, s.Department, s.GraduationYear, g.AcademicYear, g.Semester, g.CumulativeGPA
+            FROM user u
+            LEFT JOIN student s ON u.Username = s.USN
+            LEFT JOIN gpa g ON u.Username = g.USN
+            WHERE u.Username = %s
+        """, (session['username'],))
+        user_info = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('user_details.html', user_info=user_info)
+    else:
+        return render_template('login.html')
+    
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    if 'username' in session and session['user_type'] == 'admin':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Example SQL query to fetch all user, student, and GPA information
+        cursor.execute("""
+            SELECT u.Username, u.UserType, s.USN, s.FirstName, s.LastName, s.Department, s.GraduationYear, g.AcademicYear, g.Semester, g.CumulativeGPA
+            FROM user u
+            LEFT JOIN student s ON u.Username = s.USN
+            LEFT JOIN gpa g ON u.Username = g.USN
+        """)
+        all_user_info = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('admin_dashboard.html', all_user_info=all_user_info)
+    else:
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('index'))
+    
+@app.route('/add_user', methods=['POST'])
+def add_user():
+    if 'username' in session and session['user_type'] == 'admin':
+        username = request.form['username']
+        password = request.form['password']
+        user_type = request.form['user_type']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO user (Username, Password, UserType) VALUES (%s, %s, %s)",
+                       (username, password, user_type))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash('User added successfully.')
+        return redirect(url_for('index'))
+    else:
+        flash('You do not have permission to add a user.')
+        return redirect(url_for('index'))
 
 @app.route('/student', methods=['GET'])
 def student():
